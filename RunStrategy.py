@@ -158,43 +158,18 @@ def argument_for_multiple():
         generators = itertools.product(core_list, arg_set , ma_short, ma_long, macd_fast, macd_slow)
         local.run(MyStrategy.Ma_Macd, feed, generators)
 
-def single_to_excel():
-    # result = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # result.wait()
-
-    # data_list = []
-    # for line in result.stdout.readlines():
-    #     data = json.loads(line.strip().replace("'","\""))
-    #     data_list.append(data)
-    # df = pd.DataFrame(data_list)
-    result2_path = "C:\\Users\\ballma\\Desktop\\MyQuant\\datas\\report.xlsx"
-    if os.path.exists(result2_path):
-        df0 = pd.read_excel(result2_path,dtype = {"code":str})
-        print df0
-    #     if df['date'][0] not in list(df0['date']):
-    #         df = pd.concat([df0,df],axis = 0)
-    #         df.to_excel(result_path)
-    # else:
-    #     df.to_excel(result_path)
-
 # strategy_mode: single | multiple
 # strategy_name: Ma_Rsi | Macd_Kdj | Ma_Macd
 strategy_mode = "multiple"
 strategy_name = "Ma_Macd"
 plot_flag = False
 
-# if __name__ == '__main__':
-#     # print sys.argv[1]
-#     if strategy_mode == "single":
-#         argument_for_single()
-#     elif strategy_mode == "multiple":
-#         argument_for_multiple()
+if __name__ == '__main__':
+    if strategy_mode == "single":
+        argument_for_single()
+    elif strategy_mode == "multiple":
+        argument_for_multiple()
 
-
-
-
-
-single_to_excel()
 
 
 
