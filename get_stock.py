@@ -9,17 +9,18 @@ from datetime import datetime
 import time
 import traceback
 from threading import Thread
+import Queue
 
 pd.set_option('display.width',450)
 
 start_date = '2016-04-01'
-end_date = '2018-04-08'
 today_date = datetime.now().strftime('%Y-%m-%d');
 data_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\datas'
 history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
 csv_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\csvs'
 pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
-test_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\test'
+report_queue = Queue.Queue()
+growth_queue = Queue.Queue()
 
 year = [2015,2016,2017,2018]
 quarter = [1,2,3,4]
@@ -62,28 +63,26 @@ def from_basic_chose():
             df_basic.drop([code],inplace = True)
     return df_basic
 
-# 获取全股季度业绩
+# 获取全市场季度业绩
 def get_single_report_data(y,q):
     try:
-        path = '%s\\report\\%s_%s.xlsx' % (data_dir,y,q)
-        if os.path.exists(path):
-            os.remove(path)
         df = ts.get_report_data(y,q)
         ret = del_needless_stock(df)
         if ret:
             print "del needless stock error~~~~~~~~~~~~~~~~"
-            return 1
         df = df.drop(['eps_yoy','epcf','bvps'],axis = 1)
         df.columns = ['code','name',"esp(%s_%s)"%(y,q),"Roe(%s_%s)"%(y,q),"net_profits(%s_%s)"%(y,q),"profits_yoy(%s_%s)"%(y,q),"distrib(%s_%s)"%(y,q),"report_date(%s_%s)"%(y,q)]
-        df.index = df['code']
-        df = df.drop(['code'],axis = 1)
-        df.to_excel(path,na_rep='NaN')
+        report_queue.put(df)
     except:
         print "get_single_report_data error at  %s %s " % (y,q)
 
-# 批量获取全股季度业绩
-def get_batch_report_data():
+# 生成综合业绩文件
+def get_report_data_tofile():
+    report_path = '%s\\report.xlsx' % data_dir
+    name_list = ["esp","Roe","net_profits","profits_yoy","distrib","report_date"]
+    col_list = ['code','name']
     th_pool = []
+    result = []
     for y in year:
         for q in quarter:
             t = Thread(target=get_single_report_data,args=(y,q,))
@@ -91,49 +90,46 @@ def get_batch_report_data():
             th_pool.append(t)
     for th in th_pool:
         th.join()
+    while not report_queue.empty():
+        result.append(report_queue.get())
+    report_df = result[0]
+    if len(result) > 1:
+        for df in result[1:]:
+            report_df = pd.merge(report_df,df,on = ['code','name'],how = 'outer')
 
-# 生成综合业绩文件
-def report_data_tofile():
-    get_batch_report_data()
-    report_df = pd.DataFrame()
-    path1 = '%s\\report.xlsx' % data_dir
-    if os.path.exists(path1):
-        os.remove(path1)
     for y in year:
         for q in quarter:
-            path = '%s\\report\\%s_%s.xlsx' % (data_dir,y,q)
-            if os.path.exists(path):
-                df = pd.read_excel(path,dtype = {"code":str})
-                if y == year[0] and q == quarter[0]:
-                    report_df = df
-                else:
-                    df = df.drop(['name'],axis = 1)
-                    report_df = pd.merge(report_df,df,on = ['code'],how = 'outer')
+            for name in name_list:
+                col = "%s(%s_%s)" % (name,y,q)
+                if col in report_df.columns:
+                    col_list.append("%s(%s_%s)" % (name,y,q))
+    report_df = report_df.ix[:, col_list]
     report_df.index = report_df['code']
     report_df = report_df.drop(['code'],axis = 1).drop_duplicates()
-    report_df.to_excel(path1,na_rep='NaN')
+    if os.path.exists(report_path):
+        os.remove(report_path)
+    report_df.to_excel(report_path,na_rep='NaN')
 
 # 获取全市场季度成长
 def get_single_growth_data(y,q):
     try:
-        path = '%s\\growth\\%s_%s.xlsx' % (data_dir,y,q)
-        if os.path.exists(path):
-            os.remove(path)
         df = ts.get_growth_data(y,q)
         ret = del_needless_stock(df)
         if ret:
             print "del needless stock error~~~~~~~~~~~~~~~~"
         df = df.drop(['targ','seg'],axis = 1)
         df.columns = ['code','name',"mbrg(%s_%s)"%(y,q),"nprg(%s_%s)"%(y,q),"nav(%s_%s)"%(y,q),"epsg(%s_%s)"%(y,q)]
-        df.index = df['code']
-        df = df.drop(['code'],axis = 1)
-        df.to_excel(path,na_rep='NaN')
+        growth_queue.put(df)
     except:
         print "get_single_growth_data error at  %s %s " % (y,q)
 
-# 批量获取全市场季度成长
-def get_batch_growth_data():
+# 生成综合成长文件
+def get_growth_data_tofile():
+    growth_path = '%s\\growth.xlsx' % data_dir
+    name_list = ["mbrg","nprg","nav","epsg"]
+    col_list = ['code','name']
     th_pool = []
+    result = []
     for y in year:
         for q in quarter:
             t = Thread(target=get_single_growth_data,args=(y,q,))
@@ -141,27 +137,25 @@ def get_batch_growth_data():
             th_pool.append(t)
     for th in th_pool:
         th.join()
+    while not growth_queue.empty():
+        result.append(growth_queue.get())
+    growth_df = result[0]
+    if len(result) > 1:
+        for df in result[1:]:
+            growth_df = pd.merge(growth_df,df,on = ['code','name'],how = 'outer')
 
-# 生成综合成长文件
-def growth_data_tofile():
-    get_batch_growth_data()
-    growth_df = pd.DataFrame()
-    path1 = '%s\\growth.xlsx' % data_dir
-    if os.path.exists(path1):
-        os.remove(path1)
     for y in year:
         for q in quarter:
-            path = '%s\\growth\\%s_%s.xlsx' % (data_dir,y,q)
-            if os.path.exists(path):
-                df = pd.read_excel(path,dtype = {"code":str})
-                if y == year[0] and q == quarter[0]:
-                    growth_df = df
-                else:
-                    df = df.drop(['name'],axis = 1)
-                    growth_df = pd.merge(growth_df,df,on = ['code'],how = 'outer')
+            for name in name_list:
+                col = "%s(%s_%s)" % (name,y,q)
+                if col in growth_df.columns:
+                    col_list.append("%s(%s_%s)" % (name,y,q))
+    growth_df = growth_df.ix[:, col_list]
     growth_df.index = growth_df['code']
     growth_df = growth_df.drop(['code'],axis = 1).drop_duplicates()
-    growth_df.to_excel(path1,na_rep='NaN')
+    if os.path.exists(growth_path):
+        os.remove(growth_path)
+    growth_df.to_excel(growth_path,na_rep='NaN')
 
 # 转为pyalgotrade格式的csv
 def excel_to_csv(code):
@@ -234,8 +228,8 @@ def get_stock_list():
     return stock_list
 
 # df = from_basic_chose()
-# growth_data_tofile()
-# report_data_tofile()
+# get_growth_data_tofile()
+# get_report_data_tofile()
 
 # 运行测试
 def run():
