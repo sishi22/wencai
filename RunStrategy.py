@@ -5,21 +5,13 @@ from pyalgotrade.barfeed import yahoofeed
 from pyalgotrade.optimizer import local
 from pyalgotrade.stratanalyzer import sharpe, drawdown, trades
 import itertools
-import get_stock
+import utils
 import MyStrategy
-import os
 import sys
-import subprocess
-import json
-import pandas as pd
 from datetime import datetime
 
-pd.set_option('display.width',450)
 csv_path = "C:\\Users\\ballma\\Desktop\\MyQuant\\csvs\\"
-strategy_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\MyStrategy.py'
-result_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\result.xlsx'
-cmd = 'python %s' % strategy_path
-code_list = get_stock.get_stock_list()
+code_list = utils.get_stock_list()
 
 def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
     result = {}
@@ -101,20 +93,6 @@ def run_Macd_Kdj(code, arg_set , kdj_fast, kdj_slow, macd_fast, macd_slow):
         plt.plot()
     return result
 
-def save_result_to_csv(result_list):
-    col_list = ['code','mode','arg','date','sharpe','trade','suc_rate','draw_back','final']
-    df1 = pd.DataFrame(result_list).ix[:,col_list]
-    if os.path.exists(result_path):
-        df0 = pd.read_excel(result_path,dtype = {'code':str,'draw_back':str,'sharpe':float,'suc_rate':float})
-        # df = pd.concat([df0,df1],axis = 0,ignore_index = True).reset_index(drop = True)
-        df = df1.append(df0).reset_index(drop = True)
-        newdf = df.drop_duplicates()
-        os.remove(result_path)
-        df.to_excel(result_path,index = False)
-        print newdf
-    else:
-        df1.to_excel(result_path,index = False)
-
 def argument_for_single():
     result_list = []
     if strategy_name == "Ma_Rsi":
@@ -145,7 +123,7 @@ def argument_for_single():
     if result_list:
         for result in result_list:
             print result
-        # save_result_to_csv(result_list)
+        # utils.save_result_to_csv(result_list)
     else:
         print "None"
 
@@ -189,17 +167,3 @@ if __name__ == '__main__':
         argument_for_single()
     elif strategy_mode == "multiple":
         argument_for_multiple()
-
-
-
-
-
-
-
-
-
-
-
-
-
-

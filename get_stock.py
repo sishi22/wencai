@@ -1,40 +1,27 @@
 #! usr/bin/python #coding=utf-8 
 # encoding: utf-8
-import pandas as pd
-import numpy as np
+
 import tushare as ts
 import talib
-import os
-from datetime import datetime
 import time
 import traceback
 from threading import Thread
 import Queue
+from utils import *
 
-pd.set_option('display.width',450)
-
-start_date = '2016-04-01'
-today_date = datetime.now().strftime('%Y-%m-%d');
+ts.set_token('d332be99f6485927b4a17d15925bc2c7e1b0675cb9a28d8b4c7f7730')
+start_date = '20160401'
+today_date = datetime.date.today().strftime('%Y%m%d');
+# today_date = datetime.datetime.now().strftime('%Y-%m-%d');
 data_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\datas'
 history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
 csv_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\csvs'
-pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
+
 report_queue = Queue.Queue()
 growth_queue = Queue.Queue()
-
+pro = ts.pro_api()
 year = [2015,2016,2017,2018]
 quarter = [1,2,3,4]
-
-#删除不需要的,当有code列时适用
-def del_needless_stock(df):
-    try:
-        for index in df.index:
-            if df['code'][index].upper().startswith('300'):
-                # 去除创业板
-                df.drop([index],inplace = True)
-        return 0
-    except Exception,e:
-        return 1
 
 # 获取基本面信息
 def get_basics_data():
@@ -61,6 +48,7 @@ def from_basic_chose():
         # 去除净利为负的    or 去除上市不到两年的
         if df_basic['npr'][code] < 0 or df_basic['timeToMarket'][code] > 20160101:
             df_basic.drop([code],inplace = True)
+    df_basic.to_excel(path,na_rep='NaN')
     return df_basic
 
 # 获取全市场季度业绩
@@ -70,7 +58,7 @@ def get_single_report_data(y,q):
         ret = del_needless_stock(df)
         if ret:
             print "del needless stock error~~~~~~~~~~~~~~~~"
-        df = df.drop(['eps_yoy','epcf','bvps'],axis = 1)
+        df = df.drop(['eps_yoy','epcf','bvps'],axis = 1).drop_duplicates()
         df.columns = ['code','name',"esp(%s_%s)"%(y,q),"Roe(%s_%s)"%(y,q),"net_profits(%s_%s)"%(y,q),"profits_yoy(%s_%s)"%(y,q),"distrib(%s_%s)"%(y,q),"report_date(%s_%s)"%(y,q)]
         report_queue.put(df)
     except:
@@ -157,27 +145,7 @@ def get_growth_data_tofile():
         os.remove(growth_path)
     growth_df.to_excel(growth_path,na_rep='NaN')
 
-# 转为pyalgotrade格式的csv
-def excel_to_csv(code):
-    path = '%s\\%s.xlsx' % (history_dir,code)
-    df_basic = pd.read_excel(path,dtype = {"code":str})
-    for index in df_basic.index:
-        if np.isnan(df_basic['close'][index]) or np.isnan(df_basic['close_fq'][index]):
-            df_basic.drop([index],inplace = True)
-    df = df_basic[['date','open','high','low','close','volume','close_fq']]
-    df.columns = ['Date','Open','High','Low','Close','Volume','Adj Close']
-    df.to_csv('%s\\%s.csv' % (csv_dir,code),index = False)
-
-# 向stock_pool的csv文件中添加
-def add_stock_pool(code_list):
-    new_df = pd.DataFrame(code_list,columns={'code'})
-    if os.path.exists(pool_path):
-        old_df = pd.read_csv(pool_path,dtype=str)
-        sum_df = pd.concat([old_df,new_df],axis = 0)
-        new_df = sum_df.drop_duplicates().reset_index(drop = True)
-    new_df.to_csv(pool_path,index = False)
-
-# 获取历史数据
+# 获取历史数据    时间格式:2016-10-09   (旧版) 
 def get_history_data(code,start_time='',end_time=''):
     try:
         code = str(code)
@@ -201,10 +169,32 @@ def get_history_data(code,start_time='',end_time=''):
         print "core = %s  and error = %s" %(code,traceback.print_exc())
         return 1
 
+# 在新版本里不再需要此步骤  (旧版)
 def get_data_to_csv(code):
     ret = get_history_data(code,start_date,today_date)
     if not ret:
         excel_to_csv(code)
+
+# 获取历史数据(新版)       时间格式:20161009
+def get_new_history_data(code,start_time='',end_time=''):
+    try:
+        code_str = get_new_code_name(code)
+        if not code_str:
+            return 1
+        df1 = pro.daily(ts_code=code_str,start_date=start_time,end_date=end_time)
+        df1 = df1.drop(['ts_code','pre_close','change','pct_change','amount'],axis = 1)
+        df2 = pro.adj_factor(ts_code=code_str,trade_date='')
+        df2 = df2.drop(['ts_code'],axis = 1)
+
+        df3 = pd.merge(df1,df2,how = 'inner',on = ['trade_date'])
+        df3['adj_factor'] = (df3['close'] * df3['adj_factor']).apply(lambda x : format(x,'.2f'))
+        df3['trade_date'] = df3['trade_date'].apply(lambda x : datetime.datetime(*time.strptime(x,'%Y%m%d')[:3]).strftime('%Y-%m-%d'))
+        df3.columns = ['Date','Open','High','Low','Close','Volume','Adj Close']
+        df3 = df3.set_index('Date').sort_index()
+        df3.to_csv('%s\\%s.csv' % (csv_dir,code))
+    except Exception,e:
+        print "core = %s  and error = %s" %(code,traceback.print_exc())
+        return 1
 
 # 刷新分析对象数据
 def refresh_in_pool_data():
@@ -213,26 +203,60 @@ def refresh_in_pool_data():
             try:
                 while True:
                     code = next(f).strip()
-                    t = Thread(target=get_data_to_csv,args=(code,))
+                    t = Thread(target=get_new_history_data,args=(code,start_date,today_date,))
                     t.start()
             except:
                 pass
 
-# 获取分析对象列表
-def get_stock_list():
-    stock_list = []
-    if os.path.exists(pool_path):
-        with open(pool_path) as f:
-            for line in f.readlines():
-                stock_list.append(line.strip())
-    return stock_list
+# 两年净资产收益率
+def get_roe_data():
+    report_path = '%s\\report.xlsx' % data_dir
+    df_report = pd.read_excel(report_path)
+    df_roe = df_report[['code','Roe(2016_4)','Roe(2017_4)','Roe(2018_2)']]
+    df_roe.columns = ['ts_code','roe(2016)','roe(2017)','roe(2018_2)']
+    df_roe = df_roe.copy().drop_duplicates()
+    df_roe['ts_code'] = df_roe['ts_code'].apply(lambda x: get_new_code_name(x))
+    return df_roe
 
-# df = from_basic_chose()
-# get_growth_data_tofile()
-# get_report_data_tofile()
+# 复权因子的增长性
+def get_rerights_data(today_date):
+    df_re = pro.adj_factor(ts_code='', trade_date = today_date, fields='ts_code,adj_factor')
+    df_basic = pro.daily_basic(ts_code='', trade_date = today_date, fields='ts_code,close,pe,pb')
+    if df_re.empty or df_basic.empty:
+        yesterday_date = getYesterday()
+        df_re = pro.adj_factor(ts_code='', trade_date = yesterday_date, fields='ts_code,adj_factor')
+        df_basic = pro.daily_basic(ts_code='', trade_date = yesterday_date, fields='ts_code,close,pe,pb')
+        print "get no data on %s now use %s" % (today_date,yesterday_date)
+
+    s_data = pro.stock_basic(exchange_id='', is_hs='S', fields='ts_code,name,list_date')
+    h_data = pro.stock_basic(exchange_id='', is_hs='H', fields='ts_code,name,list_date')
+    df_data = pd.concat([h_data,s_data],axis = 0)
+    df_data = df_data.drop(df_data.index[(df_data['ts_code'].str.startswith('300')) | (df_data['list_date'].str.startswith('2018'))])
+
+    df1 = pd.merge(df_data,df_re,on = ['ts_code'],how = 'inner')
+    df2 = pd.merge(df1,df_basic,on = ['ts_code'],how = 'inner')
+    df = df2[['ts_code','name','list_date','adj_factor','pe','pb','close']]
+    df = df.set_index('ts_code',drop = True)
+    df = df.drop(df.index[df['pe'].isnull()])
+    df = df.apply(pd.to_numeric, errors='ignore')
+    # 平均每年的复权因子增长率
+    df['growth'] = df.apply(lambda x: (x['adj_factor']*10000/(int(today_date) - x['list_date'])),axis = 1)
+    # df = df.sort_values(['growth'],ascending=False)      # 排序
+    return df
+
+# 选择
+def chose_stock_from_data(today_date):
+    reright_df = get_rerights_data(today_date)
+    roe_df = get_roe_data()
+    df = pd.merge(reright_df,roe_df,on = ['ts_code'],how = 'inner')
+    df = df.sort_values(['growth'],ascending=False)
+    return df
 
 # 运行测试
 def run():
+    # df = from_basic_chose()
+    # get_growth_data_tofile()
+    # get_report_data_tofile()
     refresh_in_pool_data()
 
 # run()
