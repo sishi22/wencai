@@ -3,7 +3,6 @@
 
 import tushare as ts
 import talib
-import time
 import traceback
 from threading import Thread
 import Queue
@@ -11,7 +10,7 @@ from utils import *
 
 ts.set_token('d332be99f6485927b4a17d15925bc2c7e1b0675cb9a28d8b4c7f7730')
 start_date = '20160401'
-today_date = datetime.date.today().strftime('%Y%m%d');
+today_date = getBeforeDay(0)
 # today_date = datetime.datetime.now().strftime('%Y-%m-%d');
 data_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\datas'
 history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
@@ -80,23 +79,23 @@ def get_report_data_tofile():
         th.join()
     while not report_queue.empty():
         result.append(report_queue.get())
-    report_df = result[0]
+    df_report = result[0]
     if len(result) > 1:
         for df in result[1:]:
-            report_df = pd.merge(report_df,df,on = ['code','name'],how = 'outer')
+            df_report = pd.merge(df_report,df,on = ['code','name'],how = 'outer')
 
     for y in year:
         for q in quarter:
             for name in name_list:
                 col = "%s(%s_%s)" % (name,y,q)
-                if col in report_df.columns:
+                if col in df_report.columns:
                     col_list.append("%s(%s_%s)" % (name,y,q))
-    report_df = report_df.ix[:, col_list]
-    report_df.index = report_df['code']
-    report_df = report_df.drop(['code'],axis = 1).drop_duplicates()
+    df_report = df_report.ix[:, col_list]
+    df_report.index = df_report['code']
+    df_report = df_report.drop(['code'],axis = 1).drop_duplicates()
     if os.path.exists(report_path):
         os.remove(report_path)
-    report_df.to_excel(report_path,na_rep='NaN')
+    df_report.to_excel(report_path,na_rep='NaN')
 
 # 获取全市场季度成长
 def get_single_growth_data(y,q):
@@ -127,23 +126,23 @@ def get_growth_data_tofile():
         th.join()
     while not growth_queue.empty():
         result.append(growth_queue.get())
-    growth_df = result[0]
+    df_growth = result[0]
     if len(result) > 1:
         for df in result[1:]:
-            growth_df = pd.merge(growth_df,df,on = ['code','name'],how = 'outer')
+            df_growth = pd.merge(df_growth,df,on = ['code','name'],how = 'outer')
 
     for y in year:
         for q in quarter:
             for name in name_list:
                 col = "%s(%s_%s)" % (name,y,q)
-                if col in growth_df.columns:
+                if col in df_growth.columns:
                     col_list.append("%s(%s_%s)" % (name,y,q))
-    growth_df = growth_df.ix[:, col_list]
-    growth_df.index = growth_df['code']
-    growth_df = growth_df.drop(['code'],axis = 1).drop_duplicates()
+    df_growth = df_growth.ix[:, col_list]
+    df_growth.index = df_growth['code']
+    df_growth = df_growth.drop(['code'],axis = 1).drop_duplicates()
     if os.path.exists(growth_path):
         os.remove(growth_path)
-    growth_df.to_excel(growth_path,na_rep='NaN')
+    df_growth.to_excel(growth_path,na_rep='NaN')
 
 # 获取历史数据    时间格式:2016-10-09   (旧版) 
 def get_history_data(code,start_time='',end_time=''):
@@ -210,23 +209,44 @@ def refresh_in_pool_data():
 
 # 两年净资产收益率
 def get_roe_data():
-    report_path = '%s\\report.xlsx' % data_dir
-    df_report = pd.read_excel(report_path)
-    df_roe = df_report[['code','Roe(2016_4)','Roe(2017_4)','Roe(2018_2)']]
-    df_roe.columns = ['ts_code','roe(2016)','roe(2017)','roe(2018_2)']
-    df_roe = df_roe.copy().drop_duplicates()
-    df_roe['ts_code'] = df_roe['ts_code'].apply(lambda x: get_new_code_name(x))
+    df_roe = pd.DataFrame()
+    try:
+        report_path = '%s\\report.xlsx' % data_dir
+        df_report = pd.read_excel(report_path)
+        df_roe = df_report[['code','Roe(2016_4)','Roe(2017_4)','Roe(2018_2)']]
+        df_roe.columns = ['ts_code','roe(2016)','roe(2017)','roe(2018_2)']
+        df_roe = df_roe.copy().drop_duplicates()
+        df_roe['ts_code'] = df_roe['ts_code'].apply(lambda x: get_new_code_name(x))
+    except:
+        print "error = %s" % traceback.print_exc()
     return df_roe
 
+# 获取行业地域信息
+def get_area_data():
+    df_area = pd.DataFrame()
+    try:
+        basic_path = '%s\\stock_basics.xlsx' % data_dir
+        df_data = pd.read_excel(basic_path)
+        df_area = df_data[['code','industry','area']]
+        df_area.columns = ['ts_code','industry','area']
+        df_area = df_area.copy().drop_duplicates()
+        df_area['ts_code'] = df_area['ts_code'].apply(lambda x: get_new_code_name(x))
+    except:
+        print "error = %s" % traceback.print_exc()
+    return df_area
+
 # 复权因子的增长性
-def get_rerights_data(today_date):
-    df_re = pro.adj_factor(ts_code='', trade_date = today_date, fields='ts_code,adj_factor')
-    df_basic = pro.daily_basic(ts_code='', trade_date = today_date, fields='ts_code,close,pe,pb')
-    if df_re.empty or df_basic.empty:
-        yesterday_date = getYesterday()
-        df_re = pro.adj_factor(ts_code='', trade_date = yesterday_date, fields='ts_code,adj_factor')
-        df_basic = pro.daily_basic(ts_code='', trade_date = yesterday_date, fields='ts_code,close,pe,pb')
-        print "get no data on %s now use %s" % (today_date,yesterday_date)
+def get_rerights_data(date):
+    df_basic = pro.daily_basic(ts_code='', trade_date = date, fields='ts_code,close,pe,pb')
+    n = 0
+    while df_basic.empty:
+        n += 1
+        date = getBeforeDay(n,date)
+        df_basic = pro.daily_basic(ts_code='', trade_date = date, fields='ts_code,close,pe,pb')
+        df_re = pro.adj_factor(ts_code='', trade_date = date, fields='ts_code,adj_factor')
+    else:
+        df_re = pro.adj_factor(ts_code='', trade_date = date, fields='ts_code,adj_factor')
+    print "get rerights_data on %s" % (date)
 
     s_data = pro.stock_basic(exchange_id='', is_hs='S', fields='ts_code,name,list_date')
     h_data = pro.stock_basic(exchange_id='', is_hs='H', fields='ts_code,name,list_date')
@@ -240,16 +260,22 @@ def get_rerights_data(today_date):
     df = df.drop(df.index[df['pe'].isnull()])
     df = df.apply(pd.to_numeric, errors='ignore')
     # 平均每年的复权因子增长率
-    df['growth'] = df.apply(lambda x: (x['adj_factor']*10000/(int(today_date) - x['list_date'])),axis = 1)
+    df['growth'] = df.apply(lambda x: (x['adj_factor']*10000/(int(date) - x['list_date'])),axis = 1)
     # df = df.sort_values(['growth'],ascending=False)      # 排序
     return df
 
 # 选择
-def chose_stock_from_data(today_date):
-    reright_df = get_rerights_data(today_date)
-    roe_df = get_roe_data()
-    df = pd.merge(reright_df,roe_df,on = ['ts_code'],how = 'inner')
-    df = df.sort_values(['growth'],ascending=False)
+def chose_stock_from_data(date):
+    df_reright = get_rerights_data(date)
+    df_roe = get_roe_data()
+    df_area = get_area_data()
+    df_reright_roe = pd.merge(df_reright,df_roe,on = ['ts_code'],how = 'inner')
+    df_reright_roe_area = pd.merge(df_reright_roe,df_area,on = ['ts_code'],how = 'inner')
+    df_reright_roe_area = df_reright_roe_area.sort_values(['growth'],ascending=False)
+    df_reright_roe_area = df_reright_roe_area[['ts_code','name','industry','area','list_date','growth','roe(2016)','roe(2017)','pe','pb']]
+
+    df = df_reright_roe_area.copy()
+    df = df[(df['growth'] > 1) & (df['pe'] < 15) & (df['roe(2016)'] > 15) & (df['roe(2017)'] > 15)]
     return df
 
 # 运行测试
@@ -257,6 +283,8 @@ def run():
     # df = from_basic_chose()
     # get_growth_data_tofile()
     # get_report_data_tofile()
-    refresh_in_pool_data()
+    # refresh_in_pool_data()
+    df = chose_stock_from_data(today_date)
+    # print df
 
 # run()

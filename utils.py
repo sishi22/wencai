@@ -4,18 +4,23 @@ import datetime
 import pandas as pd
 import numpy as np
 import os
+import time
 
 pd.set_option('display.width',500)
 pd.set_option('display.max_columns', 15)
 pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
 result_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\result.xlsx'
 
-def getYesterday():
-    today=datetime.date.today()
-    oneday=datetime.timedelta(days=1) 
-    yesterday=today-oneday
-    yesterday = yesterday.strftime('%Y%m%d')
-    return yesterday
+# 计算date前n天为哪天
+def getBeforeDay(n,date = ''):
+    if date:
+        today = datetime.date(*time.strptime(date,'%Y%m%d')[:3])
+    else:
+        today = datetime.date.today()
+    days = datetime.timedelta(days=n)
+    before_day = today - days
+    before_day = before_day.strftime('%Y%m%d')
+    return before_day
 
 #删除不需要的,当有code列时适用
 def del_needless_stock(df):
