@@ -13,7 +13,6 @@ import sys
 from datetime import datetime
 
 csv_path = "C:\\Users\\ballma\\Desktop\\MyQuant\\csvs\\"
-code_list = utils.get_stock_list()
 
 
 def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
@@ -108,15 +107,7 @@ def argument_for_single():
             else:
                 ret = run_Ma_Rsi(i, "fixed", 5, 10, 15, 30)
             result_list.append(ret)
-    elif strategy_name == "Macd_Kdj":
-        for i in code_list:
-            if i == "002222":
-                ret = run_Macd_Kdj(i, "fixed", 9, 12, 14, 29)
-            elif i == "601211":
-                ret = run_Macd_Kdj(i, "fixed", 5, 22, 7, 25)
-            else:
-                ret = run_Macd_Kdj(i, "fixed", 3, 9, 12, 26)
-            result_list.append(ret)
+
     elif strategy_name == "Ma_Macd":
         for i in code_list:
             if i == "002222":
@@ -126,6 +117,19 @@ def argument_for_single():
             else:
                 ret = run_Ma_Macd(i, "fixed", 5, 10, 15, 30)
             result_list.append(ret)
+
+    elif strategy_name == "Macd_Kdj":
+        for i in code_list:
+            if i == "601012":
+                ret = run_Macd_Kdj(i, "fixed", 3, 16, 9, 13)
+            elif i == "601211":
+                ret = run_Macd_Kdj(i, "fixed", 5, 22, 9, 21)
+            elif i == "002222":
+                ret = run_Macd_Kdj(i, "fixed", 9, 12, 3, 29)
+            else:
+                ret = run_Macd_Kdj(i, "fixed", 3, 9, 12, 26)
+            result_list.append(ret)
+
     if result_list:
         for result in result_list:
             print result
@@ -168,6 +172,7 @@ def argument_for_multiple():
 strategy_mode = "single"
 strategy_name = "Macd_Kdj"
 plot_flag = False
+# code_list = utils.get_stock_list()
 
 if __name__ == '__main__':
     if strategy_mode == "single":

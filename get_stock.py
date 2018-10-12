@@ -19,6 +19,7 @@ today_date = utils.getBeforeDay(0)
 data_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\datas'
 history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
 csv_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\csvs'
+pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
 
 report_queue = Queue.Queue()
 growth_queue = Queue.Queue()
@@ -180,7 +181,7 @@ def get_history_data(code, start_time='', end_time=''):
                                     'ma20', 'volume', 'macd', 'signal', 'EMA7', 'EMA14', 'close_fq'], na_rep='NaN')
         return 0
     except Exception, e:
-        print "core = %s  and error = %s" % (code, traceback.print_exc())
+        print "code = %s  and error = %s" % (code, traceback.print_exc())
         return 1
 
 
@@ -201,7 +202,6 @@ def get_new_history_data(code, start_time='', end_time=''):
         df1 = df1.drop(['ts_code', 'pre_close', 'change', 'pct_change', 'amount'], axis=1)
         df2 = pro.adj_factor(ts_code=code_str, trade_date='')
         df2 = df2.drop(['ts_code'], axis=1)
-
         df3 = pd.merge(df1, df2, how='inner', on=['trade_date'])
         df3['adj_factor'] = (df3['close'] * df3['adj_factor']).apply(lambda x: format(x, '.2f'))
         df3['trade_date'] = df3['trade_date'].apply(lambda x: datetime.datetime(
@@ -209,8 +209,9 @@ def get_new_history_data(code, start_time='', end_time=''):
         df3.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
         df3 = df3.set_index('Date').sort_index()
         df3.to_csv('%s\\%s.csv' % (csv_dir, code))
+        print "save %s data successfully……" % code
     except Exception, e:
-        print "core = %s  and error = %s" % (code, traceback.print_exc())
+        print "code = %s  and error = %s" % (code, traceback.print_exc())
         return 1
 
 

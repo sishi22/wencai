@@ -51,7 +51,7 @@ class Ma_Rsi(strategy.BacktestingStrategy):
             return 'UP'
         if self.ma_short[-1] < self.ma_long[-1]:
             return 'DOWN'
-        return 'UN_FLUNE'
+        return 'UN_KNOWN'
 
     def onBars(self, bars):
         if self.initState is False:
@@ -121,14 +121,14 @@ class Ma_Macd(strategy.BacktestingStrategy):
                 return 'UP'
             if self.diff[-1] < self.diff[-2] and self.dea[-1] < self.dea[-2]:
                 return 'DOWN'
-        return 'UN_FLUNE'
+        return 'UN_KNOWN'
 
     def checkMaCondition(self):
         if self.ma_short[-1] > self.ma_long[-1]:
             return 'UP'
         if self.ma_short[-1] < self.ma_long[-1]:
             return 'DOWN'
-        return 'UN_FLUNE'
+        return 'UN_KNOWN'
 
     def onBars(self, bars):
         if self.initState is False:
@@ -169,6 +169,8 @@ class Macd_Kdj(strategy.BacktestingStrategy):
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
             execInfo = position.getEntryOrder().getExecutionInfo()
+            # getAdjClosePrice方法为自己在源码里增加的
+            # print position.getAdjClosePrice()
             self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
         pass
 
@@ -199,7 +201,7 @@ class Macd_Kdj(strategy.BacktestingStrategy):
                 return 'UP'
             if self.diff[-1] < self.diff[-2] and self.dea[-1] < self.dea[-2]:
                 return 'DOWN'
-        return 'UN_FLUNE'
+        return 'UN_KNOWN'
 
     def checkKdjCondition(self):
         if self.kdj_k[-1] < self.kdj_d[-1] and self.kdj_k[-2] > self.kdj_d[-2]:  # fast下穿slow
@@ -210,7 +212,7 @@ class Macd_Kdj(strategy.BacktestingStrategy):
             return 'UP'
         elif 75 < self.kdj_k[-1] < self.kdj_k[-2] and self.kdj_d[-1] < self.kdj_d[-2]:
             return 'DOWN'
-        return 'UN_FLUNE'
+        return 'UN_KNOWN'
 
     def onBars(self, bars):
         if self.initState is False:
