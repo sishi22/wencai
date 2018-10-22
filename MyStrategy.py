@@ -30,8 +30,9 @@ class Ma_Rsi(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getEntryOrder().getExecutionInfo()
-            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            # execInfo = position.getEntryOrder().getExecutionInfo()
+            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -39,8 +40,9 @@ class Ma_Rsi(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getExitOrder().getExecutionInfo()
-            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # execInfo = position.getExitOrder().getExecutionInfo()
+            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):
@@ -90,8 +92,9 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getEntryOrder().getExecutionInfo()
-            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            # execInfo = position.getEntryOrder().getExecutionInfo()
+            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -99,8 +102,9 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getExitOrder().getExecutionInfo()
-            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # execInfo = position.getExitOrder().getExecutionInfo()
+            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):
@@ -168,10 +172,11 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getEntryOrder().getExecutionInfo()
-            # getAdjClosePrice方法为自己在源码里增加的
+            # execInfo = position.getEntryOrder().getExecutionInfo()
+            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            # getAdjClosePrice 方法为自己在源码里增加的
             # print position.getAdjClosePrice()
-            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -179,8 +184,9 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            execInfo = position.getExitOrder().getExecutionInfo()
-            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # execInfo = position.getExitOrder().getExecutionInfo()
+            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):

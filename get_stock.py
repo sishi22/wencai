@@ -192,18 +192,24 @@ def get_data_to_csv(code):
         utils.excel_to_csv(code)
 
 
-def get_new_history_data(code, start_time='', end_time=''):
+def get_new_history_data(code, start_time='', end_time='',hfq=''):
     # 获取历史数据(新版)       时间格式:20161009
     try:
         code_str = utils.get_new_code_name(code)
         if not code_str:
             return 1
-        df1 = pro.daily(ts_code=code_str, start_date=start_time, end_date=end_time)
-        df1 = df1.drop(['ts_code', 'pre_close', 'change', 'pct_change', 'amount'], axis=1)
-        df2 = pro.adj_factor(ts_code=code_str, trade_date='')
-        df2 = df2.drop(['ts_code'], axis=1)
-        df3 = pd.merge(df1, df2, how='inner', on=['trade_date'])
-        df3['adj_factor'] = (df3['close'] * df3['adj_factor']).apply(lambda x: format(x, '.2f'))
+        df1 = ts.pro_bar(pro_api=pro, ts_code=code_str, adj='hfq', start_date=start_time, end_date=end_time)
+        df2 = pro.daily(ts_code=code_str, start_date=start_time, end_date=end_time)
+        if hfq == "hfq":
+            df1 = df1.drop(['ts_code', 'trade_date', 'pre_close', 'change', 'pct_change', 'amount'], axis=1).reset_index()
+            df2['adj_factor'] = df2['open']
+            df2 = df2[['trade_date','adj_factor']]
+            df3 = pd.merge(df1, df2, how='inner', on=['trade_date'])
+        else:
+            df1['adj_factor'] = df1['open']
+            df1 = df1[['adj_factor']].reset_index()
+            df2 = df2.drop(['ts_code', 'pre_close', 'change', 'pct_change', 'amount'], axis=1)
+            df3 = pd.merge(df2, df1, how='inner', on=['trade_date'])
         df3['trade_date'] = df3['trade_date'].apply(lambda x: datetime.datetime(
             *time.strptime(x, '%Y%m%d')[:3]).strftime('%Y-%m-%d'))
         df3.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
@@ -223,7 +229,7 @@ def refresh_in_pool_data():
             try:
                 while True:
                     code = next(f).strip()
-                    t = Thread(target=get_new_history_data, args=(code, start_date, today_date,))
+                    t = Thread(target=get_new_history_data, args=(code, start_date, today_date, "hfq"))
                     t.start()
                     th_pool.append(t)
                 for th in th_pool:
