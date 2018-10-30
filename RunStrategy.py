@@ -1,5 +1,5 @@
-#-*- coding: utf-8 -*-
-# import os
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 from pyalgotrade import plotter
 from pyalgotrade.barfeed import yahoofeed
 from pyalgotrade.optimizer import local
@@ -21,7 +21,10 @@ def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
     trade = trades.Trades()
     sharpe_ratio = sharpe.SharpeRatio()
     draw_down = drawdown.DrawDown()
-    feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    if arg_set == "fixed":
+        feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    else:
+        feed.addBarsFromCSV(code, csv_path + "%s_hfq.csv" % code)
     myStrategy = MyStrategy.Ma_Rsi(feed, code, arg_set, ma_short, ma_long, rsi_in, rsi_out)
     myStrategy.attachAnalyzer(sharpe_ratio)
     myStrategy.attachAnalyzer(draw_down)
@@ -39,7 +42,7 @@ def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
     result["date"] = datetime.now().strftime('%Y-%m-%d')
     if plot_flag:
         plt.plot()
-    # print "trade_commissions: %s" % trade.getCommissionsForAllTrades()
+    # print("trade_commissions: %s" % trade.getCommissionsForAllTrades())
     return result
 
 
@@ -49,7 +52,10 @@ def run_Ma_Macd(code, arg_set, ma_short, ma_long, macd_fast, macd_slow):
     trade = trades.Trades()
     sharpe_ratio = sharpe.SharpeRatio()
     draw_down = drawdown.DrawDown()
-    feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    if arg_set == "fixed":
+        feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    else:
+        feed.addBarsFromCSV(code, csv_path + "%s_hfq.csv" % code)
     myStrategy = MyStrategy.Ma_Macd(feed, code, arg_set, ma_short, ma_long, macd_fast, macd_slow)
     myStrategy.attachAnalyzer(sharpe_ratio)
     myStrategy.attachAnalyzer(draw_down)
@@ -76,7 +82,10 @@ def run_Macd_Kdj(code, arg_set, kdj_fast, kdj_slow, macd_fast, macd_slow):
     trade = trades.Trades()
     sharpe_ratio = sharpe.SharpeRatio()
     draw_down = drawdown.DrawDown()
-    feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    if arg_set == "fixed":
+        feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+    else:
+        feed.addBarsFromCSV(code, csv_path + "%s_hfq.csv" % code)
     myStrategy = MyStrategy.Macd_Kdj(feed, code, arg_set, kdj_fast, kdj_slow, macd_fast, macd_slow)
     myStrategy.attachAnalyzer(sharpe_ratio)
     myStrategy.attachAnalyzer(draw_down)
@@ -132,10 +141,10 @@ def argument_for_single():
 
     if result_list:
         for result in result_list:
-            print result
+            print(result)
         # utils.save_result_to_csv(result_list)
     else:
-        print "None"
+        print("None")
 
 
 def argument_for_multiple():

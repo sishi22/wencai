@@ -1,5 +1,5 @@
-#! usr/bin/python #coding=utf-8 
-# encoding: utf-8
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 from pyalgotrade import strategy
 from pyalgotrade.technical import ma
 from pyalgotrade.technical import rsi
@@ -13,7 +13,7 @@ class Ma_Rsi(strategy.BacktestingStrategy):
 
     def __init__(self, feed, instrument, arg_set, ma_short=5, ma_long=10, rsi_in=6, rsi_out=12):
         broker_commission = broker.backtesting.TradePercentage(0.0004)
-        brokers = broker.backtesting.Broker(10000, feed, broker_commission)
+        brokers = broker.backtesting.Broker(1000000, feed, broker_commission)
         super(Ma_Rsi, self).__init__(feed, brokers)
         self.__instrument = instrument
         self.__feed = feed
@@ -30,9 +30,9 @@ class Ma_Rsi(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getEntryOrder().getExecutionInfo()
-            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
-            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
+            execInfo = position.getEntryOrder().getExecutionInfo()
+            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            # self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -40,9 +40,9 @@ class Ma_Rsi(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getExitOrder().getExecutionInfo()
-            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
-            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
+            execInfo = position.getExitOrder().getExecutionInfo()
+            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):
@@ -74,7 +74,7 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def __init__(self, feed, instrument, arg_set, ma_short=5, ma_long=10, macd_fast=6, macd_slow=12):
         broker_commission = broker.backtesting.TradePercentage(0.0004)
-        brokers = broker.backtesting.Broker(10000, feed, broker_commission)
+        brokers = broker.backtesting.Broker(1000000, feed, broker_commission)
         super(Ma_Macd, self).__init__(feed, brokers)
         self.__instrument = instrument
         self.__feed = feed
@@ -92,9 +92,9 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getEntryOrder().getExecutionInfo()
-            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
-            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
+            execInfo = position.getEntryOrder().getExecutionInfo()
+            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            # self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -102,9 +102,9 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getExitOrder().getExecutionInfo()
-            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
-            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
+            execInfo = position.getExitOrder().getExecutionInfo()
+            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):
@@ -154,7 +154,7 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def __init__(self, feed, instrument, arg_set, kdj_fast=3, kdj_slow=9, macd_fast=12, macd_slow=26):
         broker_commission = broker.backtesting.TradePercentage(0.0004)
-        brokers = broker.backtesting.Broker(10000, feed, broker_commission)
+        brokers = broker.backtesting.Broker(1000000, feed, broker_commission)
         super(Macd_Kdj, self).__init__(feed, brokers)
         self.__instrument = instrument
         self.__feed = feed
@@ -172,11 +172,10 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def onEnterOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getEntryOrder().getExecutionInfo()
-            # self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
+            execInfo = position.getEntryOrder().getExecutionInfo()
+            self.info("%s BUY at %.2f" % (self.code, execInfo.getPrice()))
             # getAdjClosePrice 方法为自己在源码里增加的
-            # print position.getAdjClosePrice()
-            self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
+            # self.info("%s BUY at %.2f" % (self.code, position.getAdjClosePrice()))
         pass
 
     def onEnterCanceled(self, position):
@@ -184,9 +183,9 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def onExitOk(self, position):
         if self.arg_set == "fixed":
-            # execInfo = position.getExitOrder().getExecutionInfo()
-            # self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
-            self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
+            execInfo = position.getExitOrder().getExecutionInfo()
+            self.info("%s SELL at %.2f" % (self.code, execInfo.getPrice()))
+            # self.info("%s SELL at %.2f" % (self.code, position.getAdjClosePrice()))
         self.__position = None
 
     def onExitCanceled(self, position):

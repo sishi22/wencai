@@ -1,8 +1,8 @@
-#! usr/bin/python #coding=utf-8 
-# encoding: utf-8
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 import os
 import time
-import Queue
+import queue
 import datetime
 import traceback
 from threading import Thread
@@ -11,6 +11,11 @@ import numpy as np
 import tushare as ts
 import talib
 import utils
+
+import sys
+if sys.version.startswith("3"):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
 
 ts.set_token('d332be99f6485927b4a17d15925bc2c7e1b0675cb9a28d8b4c7f7730')
 start_date = '20160401'
@@ -21,8 +26,8 @@ history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
 csv_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\csvs'
 pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
 
-report_queue = Queue.Queue()
-growth_queue = Queue.Queue()
+report_queue = queue.Queue()
+growth_queue = queue.Queue()
 pro = ts.pro_api()
 year = [2015, 2016, 2017, 2018]
 quarter = [1, 2, 3, 4]
@@ -64,13 +69,13 @@ def get_single_report_data(y, q):
         df = ts.get_report_data(y, q)
         ret = utils.del_needless_stock(df)
         if ret:
-            print "del needless stock error~~~~~~~~~~~~~~~~"
+            print("del needless stock error~~~~~~~~~~~~~~~~")
         df = df.drop(['eps_yoy', 'epcf', 'bvps'], axis=1).drop_duplicates()
         df.columns = ['code', 'name', "esp(%s_%s)" % (y, q), "Roe(%s_%s)" % (y, q), "net_profits(%s_%s)" % (
             y, q), "profits_yoy(%s_%s)" % (y, q), "distrib(%s_%s)" % (y, q), "report_date(%s_%s)" % (y, q)]
         report_queue.put(df)
     except:
-        print "get_single_report_data error at  %s %s " % (y, q)
+        print("get_single_report_data error at  %s %s " % (y, q))
 
 
 def get_report_data_tofile():
@@ -114,13 +119,13 @@ def get_single_growth_data(y, q):
         df = ts.get_growth_data(y, q)
         ret = utils.del_needless_stock(df)
         if ret:
-            print "del needless stock error~~~~~~~~~~~~~~~~"
+            print("del needless stock error~~~~~~~~~~~~~~~~")
         df = df.drop(['targ', 'seg'], axis=1)
         df.columns = ['code', 'name', "mbrg(%s_%s)" % (y, q), "nprg(%s_%s)" % (
             y, q), "nav(%s_%s)" % (y, q), "epsg(%s_%s)" % (y, q)]
         growth_queue.put(df)
     except:
-        print "get_single_growth_data error at  %s %s " % (y, q)
+        print("get_single_growth_data error at  %s %s " % (y, q))
 
 
 def get_growth_data_tofile():
@@ -158,6 +163,30 @@ def get_growth_data_tofile():
     df_growth.to_excel(growth_path, na_rep='NaN')
 
 
+def getMovieDf(start_day,end_day=''):
+    # 获取电影票房和评分数据，时间格式："20181023"
+    df = pd.DataFrame()
+    try:
+        movie_month = utils.getMovieMonth(start_day,end_day)
+        if not movie_month:
+            return df
+        for month_date in movie_month:
+            df1 = pro.bo_monthly(date = month_date)
+            df = pd.concat([df,df1],axis = 0)
+
+        df = df[['list_date', 'month_amount','wom_index','name']]
+        df1 = df[['month_amount']].groupby(df['name']).sum()
+        df2 = df[['wom_index']].groupby(df['name']).max()
+        df3 = df[['list_date']].groupby(df['name']).min()
+        df = df3.join([df1,df2]).apply(pd.to_numeric, errors='ignore')
+        df["name"] = df.index
+        df = df.sort_values(by='wom_index', ascending = False).reset_index(drop = True)
+        df = df[df["wom_index"] > 6.0]
+    except Exception as e:
+        print("getMovieDf error = %s" % e)
+    return df
+
+
 def get_history_data(code, start_time='', end_time=''):
     # 获取历史数据    时间格式:2016-10-09   (旧版)
     try:
@@ -180,8 +209,8 @@ def get_history_data(code, start_time='', end_time=''):
         df3.to_excel(path, columns=['open', 'high', 'close', 'low', 'p_change', 'ma5',
                                     'ma20', 'volume', 'macd', 'signal', 'EMA7', 'EMA14', 'close_fq'], na_rep='NaN')
         return 0
-    except Exception, e:
-        print "code = %s  and error = %s" % (code, traceback.print_exc())
+    except Exception as e:
+        print("code = %s  and error = %s" % (code, traceback.print_exc()))
         return 1
 
 
@@ -200,24 +229,30 @@ def get_new_history_data(code, start_time='', end_time='',hfq=''):
             return 1
         df1 = ts.pro_bar(pro_api=pro, ts_code=code_str, adj='hfq', start_date=start_time, end_date=end_time)
         df2 = pro.daily(ts_code=code_str, start_date=start_time, end_date=end_time)
-        if hfq == "hfq":
-            df1 = df1.drop(['ts_code', 'trade_date', 'pre_close', 'change', 'pct_change', 'amount'], axis=1).reset_index()
-            df2['adj_factor'] = df2['open']
-            df2 = df2[['trade_date','adj_factor']]
-            df3 = pd.merge(df1, df2, how='inner', on=['trade_date'])
-        else:
-            df1['adj_factor'] = df1['open']
-            df1 = df1[['adj_factor']].reset_index()
-            df2 = df2.drop(['ts_code', 'pre_close', 'change', 'pct_change', 'amount'], axis=1)
-            df3 = pd.merge(df2, df1, how='inner', on=['trade_date'])
-        df3['trade_date'] = df3['trade_date'].apply(lambda x: datetime.datetime(
+        hfq_df1 = df1.drop(['ts_code', 'trade_date', 'pre_close', 'change', 'pct_change', 'amount'], axis=1).reset_index()
+        hfq_df2 = df2.copy()
+        hfq_df2['adj_factor'] = hfq_df2['open']
+        hfq_df2 = hfq_df2[['trade_date','adj_factor']]
+        hfq_df3 = pd.merge(hfq_df1, hfq_df2, how='inner', on=['trade_date'])
+        hfq_df3['trade_date'] = hfq_df3['trade_date'].apply(lambda x: datetime.datetime(
             *time.strptime(x, '%Y%m%d')[:3]).strftime('%Y-%m-%d'))
-        df3.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
-        df3 = df3.set_index('Date').sort_index()
-        df3.to_csv('%s\\%s.csv' % (csv_dir, code))
-        print "save %s data successfully……" % code
-    except Exception, e:
-        print "code = %s  and error = %s" % (code, traceback.print_exc())
+        hfq_df3.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
+        hfq_df3 = hfq_df3.set_index('Date').sort_index()
+        hfq_df3.to_csv('%s\\%s_hfq.csv' % (csv_dir, code))
+
+        qfq_df1 = df1.copy()
+        qfq_df1['adj_factor'] = qfq_df1['open']
+        qfq_df1 = qfq_df1[['adj_factor']].reset_index()
+        qfq_df2 = df2.drop(['ts_code', 'pre_close', 'change', 'pct_change', 'amount'], axis=1)
+        qfq_df3 = pd.merge(qfq_df2, qfq_df1, how='inner', on=['trade_date'])
+        qfq_df3['trade_date'] = qfq_df3['trade_date'].apply(lambda x: datetime.datetime(
+            *time.strptime(x, '%Y%m%d')[:3]).strftime('%Y-%m-%d'))
+        qfq_df3.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
+        qfq_df3 = qfq_df3.set_index('Date').sort_index()
+        qfq_df3.to_csv('%s\\%s.csv' % (csv_dir, code))
+        print("save %s data successfully……" % code)
+    except Exception as e:
+        print("code = %s  and error = %s" % (code, traceback.print_exc()))
         return 1
 
 
@@ -229,7 +264,7 @@ def refresh_in_pool_data():
             try:
                 while True:
                     code = next(f).strip()
-                    t = Thread(target=get_new_history_data, args=(code, start_date, today_date, "hfq"))
+                    t = Thread(target=get_new_history_data, args=(code, start_date, today_date))
                     t.start()
                     th_pool.append(t)
                 for th in th_pool:
@@ -249,7 +284,7 @@ def get_roe_data():
         df_roe = df_roe.copy().drop_duplicates()
         df_roe['ts_code'] = df_roe['ts_code'].apply(lambda x: utils.get_new_code_name(x))
     except:
-        print "error = %s" % traceback.print_exc()
+        print("error = %s" % traceback.print_exc())
     return df_roe
 
 
@@ -264,7 +299,7 @@ def get_area_data():
         df_area = df_area.copy().drop_duplicates()
         df_area['ts_code'] = df_area['ts_code'].apply(lambda x: utils.get_new_code_name(x))
     except:
-        print "error = %s" % traceback.print_exc()
+        print("error = %s" % traceback.print_exc())
     return df_area
 
 
@@ -279,7 +314,7 @@ def get_rerights_data(date):
         df_re = pro.adj_factor(ts_code='', trade_date=date, fields='ts_code,adj_factor')
     else:
         df_re = pro.adj_factor(ts_code='', trade_date=date, fields='ts_code,adj_factor')
-    print "get rerights_data on %s" % (date)
+    print("get rerights_data on %s" % (date))
 
     s_data = pro.stock_basic(exchange_id='', is_hs='S', fields='ts_code,name,list_date')
     h_data = pro.stock_basic(exchange_id='', is_hs='H', fields='ts_code,name,list_date')
@@ -322,7 +357,8 @@ def run():
     # get_growth_data_tofile()
     # get_report_data_tofile()
     # refresh_in_pool_data()
-    df = chose_stock_from_data(today_date)
-    # print df
+    df = getMovieDf('20180501','20181021')
+    # df = chose_stock_from_data(today_date)
+    print(df)
 
-# run()
+run()
