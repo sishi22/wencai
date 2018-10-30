@@ -1,10 +1,11 @@
-#! usr/bin/python #coding=utf-8 
-# encoding: utf-8
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
 import datetime
 import pandas as pd
 import numpy as np
 import os
 import time
+# import calendar
 
 pd.set_option('display.width', 500)
 pd.set_option('display.max_columns', 15)
@@ -32,7 +33,7 @@ def del_needless_stock(df):
                 # 去除创业板
                 df.drop([index], inplace=True)
         return 0
-    except Exception, e:
+    except Exception as e:
         return 1
 
 
@@ -93,7 +94,7 @@ def get_new_code_name(code):
     elif code.startswith('0'):
         code_str = str(code) + ".SZ"
     else:
-        print "core = %s  name error" % (code)
+        print("core = %s  name error" % (code))
     return code_str
 
 
@@ -110,3 +111,39 @@ def save_result_to_csv(result_list):
         df.to_excel(result_path, index=False)
     else:
         df1.to_excel(result_path, index=False)
+
+
+def getMovieMonth(start_day,end_day=''):
+    month_list = []
+    try:
+        start_date = datetime.date(*time.strptime(start_day, '%Y%m%d')[:3])
+        today_date = datetime.date.today()
+        if end_day:
+            end_date = datetime.date(*time.strptime(end_day, '%Y%m%d')[:3])
+            if end_date > today_date:
+                end_date = today_date
+        else:
+            end_date = today_date
+        if start_date > today_date:
+            start_date = today_date
+        if start_date > end_date:
+            new_date = start_date
+            start_date = end_date
+            end_date = new_date
+
+        first_day = datetime.date(start_date.year, start_date.month, 1)
+        last_day = datetime.date(end_date.year, end_date.month, 1)
+        while first_day != last_day:
+            # 取前一个月第一天
+            month_list.append(last_day.strftime('%Y%m%d'))
+            pre_month = last_day - datetime.timedelta(days = 1)
+            last_day = datetime.date(pre_month.year, pre_month.month, 1)
+            # 若取后一个月第一天，需用到 calendar 模块
+            # month_list.append(first_day.strftime('%Y%m%d'))
+            # month_days_num = calendar.monthrange(first_day.year, first_day.month)[1]
+            # first_day = first_day + datetime.timedelta(days = month_days_num)
+        else:
+            month_list.append(first_day.strftime('%Y%m%d'))
+    except Exception as e:
+        pass
+    return month_list
