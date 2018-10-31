@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import os
 import time
-import queue
 import datetime
+import queue
 import traceback
 from threading import Thread
 import pandas as pd
@@ -11,13 +11,14 @@ import numpy as np
 import tushare as ts
 import talib
 import utils
-
 import sys
-if sys.version.startswith("3"):
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+import io
 
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
 ts.set_token('d332be99f6485927b4a17d15925bc2c7e1b0675cb9a28d8b4c7f7730')
+pro = ts.pro_api()
+report_queue = queue.Queue()
+growth_queue = queue.Queue()
 start_date = '20160401'
 today_date = utils.getBeforeDay(0)
 # today_date = datetime.datetime.now().strftime('%Y-%m-%d');
@@ -25,10 +26,6 @@ data_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\datas'
 history_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\history'
 csv_dir = 'C:\\Users\\ballma\\Desktop\\MyQuant\\csvs'
 pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
-
-report_queue = queue.Queue()
-growth_queue = queue.Queue()
-pro = ts.pro_api()
 year = [2015, 2016, 2017, 2018]
 quarter = [1, 2, 3, 4]
 
@@ -221,7 +218,7 @@ def get_data_to_csv(code):
         utils.excel_to_csv(code)
 
 
-def get_new_history_data(code, start_time='', end_time='',hfq=''):
+def get_new_history_data(code, start_time='', end_time=''):
     # 获取历史数据(新版)       时间格式:20161009
     try:
         code_str = utils.get_new_code_name(code)
@@ -354,7 +351,7 @@ def chose_stock_from_data(date):
 def run():
     # 运行测试
     # df = from_basic_chose()
-    # get_growth_data_tofile()
+    # get_growth_data_tofile()k
     # get_report_data_tofile()
     # refresh_in_pool_data()
     df = getMovieDf('20180501','20181021')

@@ -31,12 +31,18 @@ def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
     myStrategy.attachAnalyzer(trade)
     plt = plotter.StrategyPlotter(myStrategy)
     myStrategy.run()
+    ProfitableCount = trade.getProfitableCount()
+    TradeCount = trade.getCount()
     result['code'] = code
     result['final'] = int(myStrategy.getBroker().getEquity())
     result['sharpe'] = "%.2f" % sharpe_ratio.getSharpeRatio(0.04)
     result['draw_back'] = "%.2f %%" % (draw_down.getMaxDrawDown() * 100)
-    result['trade'] = str(trade.getProfitableCount()) + "/" + str(trade.getCount())
-    result['suc_rate'] = "%.2f" % (float(trade.getProfitableCount()) / float(trade.getCount()))
+    if TradeCount == 0:
+        result['trade'] = 0
+        result['suc_rate'] = 0
+    else:
+        result['trade'] = str(ProfitableCount) + "/" + str(TradeCount)
+        result['suc_rate'] = "%.2f" % (float(ProfitableCount) / float(TradeCount))
     result["arg"] = "%s, %s, %s, %s" % (ma_short, ma_long, rsi_in, rsi_out)
     result["mode"] = "Ma_Rsi"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
@@ -62,12 +68,18 @@ def run_Ma_Macd(code, arg_set, ma_short, ma_long, macd_fast, macd_slow):
     myStrategy.attachAnalyzer(trade)
     plt = plotter.StrategyPlotter(myStrategy)
     myStrategy.run()
+    ProfitableCount = trade.getProfitableCount()
+    TradeCount = trade.getCount()
     result['code'] = code
     result['final'] = int(myStrategy.getBroker().getEquity())
     result['sharpe'] = "%.2f" % sharpe_ratio.getSharpeRatio(0.04)
     result['draw_back'] = "%.2f %%" % (draw_down.getMaxDrawDown() * 100)
-    result['trade'] = str(trade.getProfitableCount()) + "/" + str(trade.getCount())
-    result['suc_rate'] = "%.2f" % (float(trade.getProfitableCount()) / float(trade.getCount()))
+    if TradeCount == 0:
+        result['trade'] = 0
+        result['suc_rate'] = 0
+    else:
+        result['trade'] = str(ProfitableCount) + "/" + str(TradeCount)
+        result['suc_rate'] = "%.2f" % (float(ProfitableCount) / float(TradeCount))
     result["arg"] = "%s, %s, %s, %s" % (ma_short, ma_long, macd_fast, macd_slow)
     result["mode"] = "Ma_Macd"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
@@ -92,16 +104,21 @@ def run_Macd_Kdj(code, arg_set, kdj_fast, kdj_slow, macd_fast, macd_slow):
     myStrategy.attachAnalyzer(trade)
     plt = plotter.StrategyPlotter(myStrategy)
     myStrategy.run()
+    ProfitableCount = trade.getProfitableCount()
+    TradeCount = trade.getCount()
     result['code'] = code
     result['final'] = int(myStrategy.getBroker().getEquity())
     result['sharpe'] = "%.2f" % sharpe_ratio.getSharpeRatio(0.04)
     result['draw_back'] = "%.2f %%" % (draw_down.getMaxDrawDown() * 100)
-    result['trade'] = str(trade.getProfitableCount()) + "/" + str(trade.getCount())
-    result['suc_rate'] = "%.2f" % (float(trade.getProfitableCount()) / float(trade.getCount()))
+    if TradeCount == 0:
+        result['trade'] = 0
+        result['suc_rate'] = 0
+    else:
+        result['trade'] = str(ProfitableCount) + "/" + str(TradeCount)
+        result['suc_rate'] = "%.2f" % (float(ProfitableCount) / float(TradeCount))
     result["arg"] = "%s, %s, %s, %s" % (kdj_fast, kdj_slow, macd_fast, macd_slow)
     result["mode"] = "Macd_Kdj"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
-
     if plot_flag:
         plt.plot()
     return result
@@ -113,6 +130,8 @@ def argument_for_single():
         for i in code_list:
             if i == "002222":
                 ret = run_Ma_Rsi(i, "fixed", 5, 15, 8, 10)
+            elif i == "601012":
+                ret = run_Ma_Rsi(i, "fixed", 4, 12, 3, 10)
             else:
                 ret = run_Ma_Rsi(i, "fixed", 5, 10, 15, 30)
             result_list.append(ret)
@@ -123,6 +142,8 @@ def argument_for_single():
                 ret = run_Ma_Macd(i, "fixed", 3, 10, 5, 20)
             elif i == "601211":
                 ret = run_Ma_Macd(i, "fixed", 4, 10, 5, 17)
+            elif i == "601012":
+                ret = run_Ma_Macd(i, "fixed", 3, 23, 9, 29)
             else:
                 ret = run_Ma_Macd(i, "fixed", 5, 10, 15, 30)
             result_list.append(ret)
@@ -130,11 +151,11 @@ def argument_for_single():
     elif strategy_name == "Macd_Kdj":
         for i in code_list:
             if i == "601012":
-                ret = run_Macd_Kdj(i, "fixed", 3, 16, 9, 13)
+                ret = run_Macd_Kdj(i, "fixed", 3, 16, 6, 12)
             elif i == "601211":
                 ret = run_Macd_Kdj(i, "fixed", 5, 22, 9, 21)
             elif i == "002222":
-                ret = run_Macd_Kdj(i, "fixed", 9, 12, 3, 29)
+                ret = run_Macd_Kdj(i, "fixed", 9, 16, 6, 13)
             else:
                 ret = run_Macd_Kdj(i, "fixed", 3, 9, 12, 26)
             result_list.append(ret)
@@ -150,29 +171,29 @@ def argument_for_single():
 def argument_for_multiple():
     feed = yahoofeed.Feed()
     for code in code_list:
-        feed.addBarsFromCSV(code, csv_path + "%s.csv" % code)
+        feed.addBarsFromCSV(code, csv_path + "%s_hfq.csv" % code)
     if strategy_name == "Ma_Rsi":
         arg_set = "&"
-        ma_short = range(3, 10)
-        ma_long = range(10, 25)
-        rsi_in = range(3, 10)
-        rsi_out = range(10, 25)
+        ma_short = list(range(3, 10))
+        ma_long = list(range(10, 25))
+        rsi_in = list(range(3, 10))
+        rsi_out = list(range(10, 25))
         generators = itertools.product(code_list, arg_set, ma_short, ma_long, rsi_in, rsi_out)
         local.run(MyStrategy.Ma_Rsi, feed, generators)
     elif strategy_name == "Macd_Kdj":
         arg_set = "&"
-        kdj_fast = range(3, 10)
-        kdj_slow = range(10, 25)
-        macd_fast = range(3, 10)
-        macd_slow = range(10, 25)
+        kdj_fast = list(range(3, 10))
+        kdj_slow = list(range(10, 25))
+        macd_fast = list(range(3, 10))
+        macd_slow = list(range(10, 30))
         generators = itertools.product(code_list, arg_set, kdj_fast, kdj_slow, macd_fast, macd_slow)
         local.run(MyStrategy.Macd_Kdj, feed, generators)
     elif strategy_name == "Ma_Macd":
         arg_set = "&"
-        ma_short = range(3, 10)
-        ma_long = range(10, 25)
-        macd_fast = range(3, 10)
-        macd_slow = range(10, 30)
+        ma_short = list(range(3, 10))
+        ma_long = list(range(10, 25))
+        macd_fast = list(range(3, 10))
+        macd_slow = list(range(10, 30))
         generators = itertools.product(code_list, arg_set, ma_short, ma_long, macd_fast, macd_slow)
         local.run(MyStrategy.Ma_Macd, feed, generators)
 
