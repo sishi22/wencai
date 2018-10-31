@@ -55,18 +55,30 @@ class Ma_Rsi(strategy.BacktestingStrategy):
             return 'DOWN'
         return 'UN_KNOWN'
 
+    def checkRsiInCondition(self):
+        if self.rsi_in[-1] < 40:
+            return True
+        else :
+            return False
+
+    def checkRsiOutCondition(self):
+        if self.rsi_out[-1] > 60:
+            return True
+        else :
+            return False
+
     def onBars(self, bars):
         if self.initState is False:
-            if self.ma_long[-1] is None:
+            if not self.ma_long[-1] or not self.rsi_out[-1]:
                 return
             else:
                 self.initState = True
         if self.__position == None:
-            if self.checkMaCondition() == "UP" and self.rsi_in[-1] < 40:
+            if self.checkMaCondition() == "UP" and self.checkRsiInCondition():
                 shares = int(self.getBroker().getCash() * 0.95 / bars[self.__instrument].getPrice() / 100) * 100
                 self.__position = self.enterLong(self.__instrument, shares, True)
         elif not self.__position.exitActive():
-            if self.checkMaCondition() == "DOWN" and self.rsi_out[-1] > 60:
+            if self.checkMaCondition() == "DOWN" and self.checkRsiOutCondition():
                 self.__position.exitMarket()
 
 
@@ -136,7 +148,7 @@ class Ma_Macd(strategy.BacktestingStrategy):
 
     def onBars(self, bars):
         if self.initState is False:
-            if self.ma_long[-1] is None:
+            if not self.ma_long[-1] or not self.diff[-2]:
                 return
             else:
                 self.initState = True
@@ -221,7 +233,7 @@ class Macd_Kdj(strategy.BacktestingStrategy):
 
     def onBars(self, bars):
         if self.initState is False:
-            if self.kdj_d[-1] is None or self.diff[-1] is None:
+            if not self.kdj_k[-1]  or not self.kdj_d[-2] or not self.diff[-2]:
                 return
             else:
                 self.initState = True
