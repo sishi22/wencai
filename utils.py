@@ -9,6 +9,7 @@ import time
 
 pd.set_option('display.width', 500)
 pd.set_option('display.max_columns', 15)
+pd.set_option('display.max_rows',None)
 pool_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\stock_pool.csv'
 result_path = 'C:\\Users\\ballma\\Desktop\\MyQuant\\result.xlsx'
 

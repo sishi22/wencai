@@ -46,6 +46,10 @@ def run_Ma_Rsi(code, arg_set, ma_short, ma_long, rsi_in, rsi_out):
     result["arg"] = "%s, %s, %s, %s" % (ma_short, ma_long, rsi_in, rsi_out)
     result["mode"] = "Ma_Rsi"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
+    if myStrategy._Ma_Rsi__position:
+        result['L_state'] = "BUY"
+    else:
+        result['L_state'] = "SELL"
     if plot_flag:
         plt.plot()
     # print("trade_commissions: %s" % trade.getCommissionsForAllTrades())
@@ -83,6 +87,10 @@ def run_Ma_Macd(code, arg_set, ma_short, ma_long, macd_fast, macd_slow):
     result["arg"] = "%s, %s, %s, %s" % (ma_short, ma_long, macd_fast, macd_slow)
     result["mode"] = "Ma_Macd"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
+    if myStrategy._Ma_Macd__position:
+        result['L_state'] = "BUY"
+    else:
+        result['L_state'] = "SELL"
     if plot_flag:
         plt.plot()
     return result
@@ -119,6 +127,10 @@ def run_Macd_Kdj(code, arg_set, kdj_fast, kdj_slow, macd_fast, macd_slow):
     result["arg"] = "%s, %s, %s, %s" % (kdj_fast, kdj_slow, macd_fast, macd_slow)
     result["mode"] = "Macd_Kdj"
     result["date"] = datetime.now().strftime('%Y-%m-%d')
+    if myStrategy._Macd_Kdj__position:
+        result['L_state'] = "BUY"
+    else:
+        result['L_state'] = "SELL"
     if plot_flag:
         plt.plot()
     return result
@@ -129,7 +141,7 @@ def argument_for_single():
     if strategy_name == "Ma_Rsi":
         for i in code_list:
             if i == "002222":
-                ret = run_Ma_Rsi(i, "fixed", 5, 15, 8, 10)
+                ret = run_Ma_Rsi(i, "fixed", 9, 13, 9, 10)
             elif i == "601012":
                 ret = run_Ma_Rsi(i, "fixed", 4, 12, 3, 10)
             else:
@@ -139,11 +151,11 @@ def argument_for_single():
     elif strategy_name == "Ma_Macd":
         for i in code_list:
             if i == "002222":
-                ret = run_Ma_Macd(i, "fixed", 3, 10, 5, 20)
+                ret = run_Ma_Macd(i, "fixed", 3, 10, 4, 26)
             elif i == "601211":
                 ret = run_Ma_Macd(i, "fixed", 4, 10, 5, 17)
             elif i == "601012":
-                ret = run_Ma_Macd(i, "fixed", 3, 23, 9, 29)
+                ret = run_Ma_Macd(i, "fixed", 9, 20, 9, 21)
             else:
                 ret = run_Ma_Macd(i, "fixed", 5, 10, 15, 30)
             result_list.append(ret)
@@ -151,7 +163,7 @@ def argument_for_single():
     elif strategy_name == "Macd_Kdj":
         for i in code_list:
             if i == "601012":
-                ret = run_Macd_Kdj(i, "fixed", 3, 16, 6, 12)
+                ret = run_Macd_Kdj(i, "fixed", 6, 18, 9, 25)
             elif i == "601211":
                 ret = run_Macd_Kdj(i, "fixed", 5, 22, 9, 21)
             elif i == "002222":
