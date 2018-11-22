@@ -57,6 +57,7 @@ def from_basic_chose():
         if df_basic['npr'][code] < 0 or df_basic['timeToMarket'][code] > 20160101:
             df_basic.drop([code], inplace=True)
     df_basic.to_excel(path, na_rep='NaN')
+    print("save basic data successfully……")
     return df_basic
 
 
@@ -102,7 +103,7 @@ def get_report_data_tofile():
                 col = "%s(%s_%s)" % (name, y, q)
                 if col in df_report.columns:
                     col_list.append("%s(%s_%s)" % (name, y, q))
-    df_report = df_report.ix[:, col_list]
+    df_report = df_report.loc[:, col_list]
     df_report.index = df_report['code']
     df_report = df_report.drop(['code'], axis=1).drop_duplicates()
     if os.path.exists(report_path):
@@ -152,7 +153,7 @@ def get_growth_data_tofile():
                 col = "%s(%s_%s)" % (name, y, q)
                 if col in df_growth.columns:
                     col_list.append("%s(%s_%s)" % (name, y, q))
-    df_growth = df_growth.ix[:, col_list]
+    df_growth = df_growth.loc[:, col_list]
     df_growth.index = df_growth['code']
     df_growth = df_growth.drop(['code'], axis=1).drop_duplicates()
     if os.path.exists(growth_path):
@@ -350,12 +351,14 @@ def chose_stock_from_data(date):
 
 def run():
     # 运行测试
+    # print(",".join(utils.get_stock_list()))
     # df = from_basic_chose()
-    # get_growth_data_tofile()k
+    # get_growth_data_tofile()
     # get_report_data_tofile()
-    # refresh_in_pool_data()
-    df = getMovieDf('20180501','20181021')
     # df = chose_stock_from_data(today_date)
-    print(df)
+    df = getMovieDf('20180501','20181021')
+    # refresh_in_pool_data()
 
+    print(df)
+    
 run()
