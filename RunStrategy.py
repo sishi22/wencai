@@ -163,7 +163,7 @@ def argument_for_single():
     elif strategy_name == "Macd_Kdj":
         for i in code_list:
             if i == "601012":
-                ret = run_Macd_Kdj(i, "fixed", 6, 18, 9, 25)
+                ret = run_Macd_Kdj(i, "fixed", 3, 16, 6, 12)
             elif i == "601211":
                 ret = run_Macd_Kdj(i, "fixed", 5, 22, 9, 21)
             elif i == "002222":
